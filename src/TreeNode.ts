@@ -1,11 +1,6 @@
 import { NodeStatus, NodeType } from './BasicTypes';
 
-export type StatusChangeCallback<T> = (
-    timePoint: number,
-    node: TreeNode<T>,
-    prevStatus: NodeStatus,
-    newStatus: NodeStatus,
-) => void;
+export type StatusChangeCallback<T> = (node: TreeNode<T>, prevStatus: NodeStatus, newStatus: NodeStatus) => void;
 
 let uid = 1;
 function getUID() {
@@ -28,10 +23,12 @@ export abstract class TreeNode<T> {
         this.registration_ID_ = '';
     }
 
-    public executeTick(): NodeStatus {
-        const status = this.tick();
-        this.setStatus(status);
-        return status;
+    public executeTick(): Promise<NodeStatus> {
+        return new Promise((resolve) => {
+            const status = this.tick();
+            this.setStatus(status);
+            resolve(status);
+        });
     }
 
     protected abstract tick(): NodeStatus;
@@ -73,7 +70,7 @@ export abstract class TreeNode<T> {
         let prevStatus: NodeStatus;
         [prevStatus, this.status_] = [this.status_, newStatus];
         if (prevStatus !== newStatus) {
-            this.statusChangeCallback?.(new Date().getTime(), this, prevStatus, newStatus);
+            this.statusChangeCallback?.(this, prevStatus, newStatus);
         }
     }
 

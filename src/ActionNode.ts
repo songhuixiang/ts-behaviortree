@@ -29,12 +29,14 @@ export abstract class SyncActionNode<T> extends ActionNodeBase<T> {
     }
 
     // throws if the derived class return RUNNING.
-    public executeTick(): NodeStatus {
-        let stat = super.executeTick();
-        if (stat === NodeStatus.RUNNING) {
-            throw new Error('SyncActionNode MUST never return RUNNING');
-        }
-        return stat;
+    public executeTick(): Promise<NodeStatus> {
+        return new Promise(async (resolve) => {
+            const stat = await super.executeTick();
+            if (stat === NodeStatus.RUNNING) {
+                throw new Error('SyncActionNode MUST never return RUNNING');
+            }
+            resolve(stat);
+        });
     }
 
     // You don't need to override this
@@ -73,5 +75,127 @@ export abstract class SimpleActionNode<T> extends SyncActionNode<T> {
             this.setStatus(status);
         }
         return status;
+    }
+}
+
+export abstract class AsyncActionNode<T> extends ActionNodeBase<T> {
+    private haltRequested_: boolean = false;
+
+    constructor(name: string, blackboard: T) {
+        super(name, blackboard);
+    }
+
+    public executeTick(): Promise<NodeStatus> {
+        return new Promise(async (resolve, reject) => {
+            this.setStatus(NodeStatus.RUNNING);
+            const status = await this.tick();
+            this.setStatus(status);
+            this.haltRequested_ ? reject('haltRequested') : resolve(this.status());
+        });
+    }
+
+    public isHaltRequested(): boolean {
+        return this.haltRequested_;
+    }
+
+    public halt() {
+        this.haltRequested_ = true;
+    }
+}
+
+/**
+ * @brief The ActionNode is the goto option for,
+ * but it is actually much easier to use correctly.
+ *
+ * It is particularly useful when your code contains a request-reply pattern,
+ * i.e. when the actions sends an asychronous request, then checks periodically
+ * if the reply has been received and, eventually, analyze the reply to determine
+ * if the result is SUCCESS or FAILURE.
+ *
+ * -) an action that was in IDLE state will call onStart()
+ *
+ * -) A RUNNING action will call onRunning()
+ *
+ * -) if halted, method onHalted() is invoked
+ */
+export abstract class StatefulActionNode<T> extends ActionNodeBase<T> {
+    constructor(name: string, blackboard: T) {
+        super(name, blackboard);
+    }
+
+    // do not override this method
+    public tick(): NodeStatus {
+        const initial_status = this.status();
+        if (initial_status === NodeStatus.IDLE) {
+            const new_status = this.onStart();
+            if (new_status === NodeStatus.IDLE) {
+                throw new Error('AsyncActionNode2::onStart() must not return IDLE');
+            }
+            return new_status;
+        }
+
+        if (initial_status === NodeStatus.RUNNING) {
+            const new_status = this.onRunning();
+            if (new_status === NodeStatus.IDLE) {
+                throw new Error('AsyncActionNode2::onRunning() must not return IDLE');
+            }
+            return new_status;
+        }
+        return initial_status;
+    }
+
+    // do not override this method
+    public halt() {
+        if (this.status() === NodeStatus.RUNNING) {
+            this.onHalted();
+        }
+        this.setStatus(NodeStatus.IDLE);
+    }
+
+    /// method to be called at the beginning.
+    /// If it returns RUNNING, this becomes an asychronous node.
+    abstract onStart(): NodeStatus;
+
+    /// method invoked by a RUNNING action.
+    abstract onRunning(): NodeStatus;
+
+    /// when the method halt() is called and the action is RUNNING, this method is invoked.
+    /// This is a convenient place todo a cleanup, if needed.
+    abstract onHalted(): void;
+}
+
+export abstract class CoroActionNode<T> extends ActionNodeBase<T> {
+    private yield: boolean = false;
+
+    constructor(name: string, blackboard: T) {
+        super(name, blackboard);
+    }
+    /// Use this method to return RUNNING and temporary "pause" the Action.
+    public setStatusRunningAndYield() {
+        this.setStatus(NodeStatus.RUNNING);
+        this.yield = true;
+    }
+
+    // This method triggers the TickEngine.
+    public executeTick(): Promise<NodeStatus> {
+        return new Promise((resolve) => {
+            if (!this.yield) this.setStatus(this.tick());
+            resolve(this.status());
+        });
+    }
+
+    /** You may want to override this method. But still, remember to call this
+     * implementation too.
+     *
+     * Example:
+     *
+     *     void MyAction::halt()
+     *     {
+     *         // do your stuff here
+     *         super.halt();
+     *     }
+     */
+    public halt() {
+        this.yield = false;
     }
 }
