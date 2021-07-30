@@ -29,14 +29,12 @@ export abstract class SyncActionNode<T> extends ActionNodeBase<T> {
     }
 
     // throws if the derived class return RUNNING.
-    public executeTick(): Promise<NodeStatus> {
-        return new Promise(async (resolve) => {
-            const stat = await super.executeTick();
-            if (stat === NodeStatus.RUNNING) {
-                throw new Error('SyncActionNode MUST never return RUNNING');
-            }
-            resolve(stat);
-        });
+    public executeTick(): NodeStatus {
+        const stat = super.executeTick();
+        if (stat === NodeStatus.RUNNING) {
+            throw new Error('SyncActionNode MUST never return RUNNING');
+        }
+        return stat;
     }
 
     // You don't need to override this
@@ -85,13 +83,16 @@ export abstract class AsyncActionNode<T> extends ActionNodeBase<T> {
         super(name, blackboard);
     }
 
-    public executeTick(): Promise<NodeStatus> {
-        return new Promise(async (resolve, reject) => {
+    public executeTick(): NodeStatus {
+        if (this.status() === NodeStatus.IDLE) {
             this.setStatus(NodeStatus.RUNNING);
-            const status = await this.tick();
-            this.setStatus(status);
-            this.haltRequested_ ? reject('haltRequested') : resolve(this.status());
-        });
+            this.haltRequested_ = false;
+            setTimeout(async () => {
+                const status = await this.tick();
+                this.setStatus(status);
+            }, 0);
+        }
+        return this.status();
     }
 
     public isHaltRequested(): boolean {
@@ -177,11 +178,9 @@ export abstract class CoroActionNode<T> extends ActionNodeBase<T> {
     }
 
     // This method triggers the TickEngine.
-    public executeTick(): Promise<NodeStatus> {
-        return new Promise((resolve) => {
-            if (!this.yield) this.setStatus(this.tick());
-            resolve(this.status());
-        });
+    public executeTick(): NodeStatus {
+        if (!this.yield) this.setStatus(this.tick());
+        return this.status();
     }
 
     /** You may want to override this method. But still, remember to call this

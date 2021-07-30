@@ -23,12 +23,10 @@ export abstract class TreeNode<T> {
         this.registration_ID_ = '';
     }
 
-    public executeTick(): Promise<NodeStatus> {
-        return new Promise((resolve) => {
-            const status = this.tick();
-            this.setStatus(status);
-            resolve(status);
-        });
+    public executeTick(): NodeStatus {
+        const status = this.tick();
+        this.setStatus(status);
+        return status;
     }
 
     protected abstract tick(): NodeStatus;
