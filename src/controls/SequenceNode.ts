@@ -14,7 +14,15 @@ import { ControlNode } from '../ControlNode';
  *   Restart the loop only if (reset_on_failure == true)
  *
  */
-export abstract class SequenceNode extends ControlNode<{}> {
+
+/**
+ *	Type of ControlNode		|	Child returns FAILURE	|	Child returns RUNNING
+ *		Sequence			|	    Restart				|		Tick again
+ *		ReactiveSequence	|		Restart				|		Restart
+ *		SequenceStar		|		Tick again			|		Tick again
+ */
+
+export class SequenceNode extends ControlNode<{}> {
     private current_child_idx_: number;
 
     constructor(name: string) {
