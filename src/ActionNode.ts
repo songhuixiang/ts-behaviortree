@@ -77,30 +77,41 @@ export abstract class SimpleActionNode<T> extends SyncActionNode<T> {
 }
 
 export abstract class AsyncActionNode<T> extends ActionNodeBase<T> {
-    private haltRequested_: boolean = false;
+    private halt_requested_: boolean;
+    // private waiting: boolean;
 
     constructor(name: string, blackboard: T) {
         super(name, blackboard);
+        this.halt_requested_ = false;
+        // this.waiting = false;
     }
 
     public executeTick(): NodeStatus {
         if (this.status() === NodeStatus.IDLE) {
             this.setStatus(NodeStatus.RUNNING);
-            this.haltRequested_ = false;
-            setTimeout(async () => {
-                const status = await this.tick();
-                this.setStatus(status);
-            }, 0);
+            this.halt_requested_ = false;
+            (async () => {
+                try {
+                    // this.waiting = true;
+                    this.setStatus(await this.tick());
+                    // this.waiting = false;
+                } catch (error) {
+                    // this.waiting = false;
+                    throw new Error(error);
+                }
+            })();
         }
         return this.status();
     }
 
     public isHaltRequested(): boolean {
-        return this.haltRequested_;
+        return this.halt_requested_;
     }
 
     public halt() {
-        this.haltRequested_ = true;
+        this.halt_requested_ = true;
+        // while (this.waiting) {}
+        // this.setStatus(NodeStatus.IDLE);
     }
 }
 

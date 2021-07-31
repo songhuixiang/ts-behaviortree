@@ -28,10 +28,10 @@ export abstract class ControlNode<T> extends TreeNode<T> {
 
     public haltChild(index: number) {
         const child = this.children_nodes_[index];
-        if (child?.status() === NodeStatus.RUNNING) {
+        if (child.status() === NodeStatus.RUNNING) {
             child.halt();
         }
-        (child as any)?.setStatus(NodeStatus.IDLE);
+        (child as any).setStatus(NodeStatus.IDLE);
     }
 
     public child(index: number): TreeNode<T> {

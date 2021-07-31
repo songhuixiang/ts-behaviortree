@@ -1,6 +1,18 @@
 import { NodeStatus } from '../BasicTypes';
 import { ControlNode } from '../ControlNode';
 
+/**
+ * @brief The FallbackNode is used to try different strategies, until one succeeds.
+ * If any child returns RUNNING, previous children will NOT be ticked again.
+ *
+ * - If all the children return FAILURE, this node returns FAILURE.
+ *
+ * - If a child returns RUNNING, this node returns RUNNING.
+ *
+ * - If a child returns SUCCESS, stop the loop and return SUCCESS.
+ *
+ */
+
 export abstract class FallbackNode extends ControlNode<{}> {
     private current_child_idx_: number;
 
