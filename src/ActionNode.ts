@@ -56,7 +56,7 @@ export abstract class SyncActionNode<T> extends ActionNodeBase<T> {
  * SimpleActionNode is executed synchronously and does not support halting.
  * NodeParameters aren't supported.
  */
-export abstract class SimpleActionNode<T> extends SyncActionNode<T> {
+export class SimpleActionNode<T> extends SyncActionNode<T> {
     protected tickFunctor_: (node: TreeNode<T>) => NodeStatus;
 
     constructor(name: string, tickFunctor: (node: TreeNode<T>) => NodeStatus, blackboard: T) {
