@@ -24,12 +24,12 @@ export abstract class TreeNode<T> {
     }
 
     public executeTick(): NodeStatus {
-        const status = this.tick();
+        const status = this.tick() as NodeStatus;
         this.setStatus(status);
         return status;
     }
 
-    protected abstract tick(): NodeStatus;
+    protected abstract tick(): NodeStatus | Promise<NodeStatus>;
     public abstract halt(): void;
     public abstract type(): NodeType;
 

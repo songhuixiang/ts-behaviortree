@@ -13,7 +13,7 @@ import { ControlNode } from '../ControlNode';
  *
  */
 
-export abstract class FallbackNode extends ControlNode<{}> {
+export class FallbackNode extends ControlNode<{}> {
     private current_child_idx_: number;
 
     constructor(name: string) {

@@ -41,6 +41,8 @@ export abstract class SyncActionNode<T> extends ActionNodeBase<T> {
     public halt() {
         this.setStatus(NodeStatus.IDLE);
     }
+
+    protected abstract tick(): NodeStatus;
 }
 
 /**
@@ -113,6 +115,8 @@ export abstract class AsyncActionNode<T> extends ActionNodeBase<T> {
         // while (this.waiting) {}
         // this.setStatus(NodeStatus.IDLE);
     }
+
+    protected abstract tick(): Promise<NodeStatus>;
 }
 
 /**
@@ -208,4 +212,6 @@ export abstract class CoroActionNode<T> extends ActionNodeBase<T> {
     public halt() {
         this.yield = false;
     }
+
+    protected abstract tick(): NodeStatus;
 }
