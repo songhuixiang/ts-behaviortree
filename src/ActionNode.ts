@@ -99,7 +99,7 @@ export abstract class AsyncActionNode<T> extends ActionNodeBase<T> {
                     // this.waiting = false;
                 } catch (error) {
                     // this.waiting = false;
-                    throw new Error(error);
+                    throw new Error(error as any);
                 }
             })();
         }

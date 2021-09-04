@@ -7,7 +7,8 @@
     "scripts": {
         "test": "jest --config jestconfig.json",
         "build": "tsc",
-        "prepare": "npm run build"
+        "prepare": "npm run build",
+        "publish": "npm login --registry=https://nexus.mocaapp.cn/repository/npm-local && npm publish --registry=https://nexus.mocaapp.cn/repository/npm-local"
     },
     "keywords": [
         "Behavior",
